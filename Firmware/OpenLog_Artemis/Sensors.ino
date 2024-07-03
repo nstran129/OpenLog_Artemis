@@ -1148,7 +1148,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
               double normalizedZ;
               if (nodeSetting->logMag)
               {
-                
+
                 nodeDevice->getMeasurementXYZ(&rawValueX, &rawValueY, &rawValueZ);
 
                 // The magnetic field values are 18-bit unsigned. The zero (mid) point is 2^17 (131072).
@@ -1253,7 +1253,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
               // X,Y,Z data
               static outputData xyzData;
               static bool dataReady = false;
-              
+
               if ((nodeSetting->logAccel) || (nodeSetting->logDataReady))
               {
                 // Check if accel data is available.
@@ -1261,7 +1261,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
                 if (dataReady)
                   nodeDevice->getAccelData(&xyzData);
               }
-                
+
               if (nodeSetting->logAccel)
               {
                 olaftoa(xyzData.xData, tempData1, 4, sizeof(tempData1) / sizeof(char));
@@ -1283,7 +1283,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
             INA3221 *nodeDevice = (INA3221 *)temp->classPtr;
             struct_INA3221 *nodeSetting = (struct_INA3221 *)temp->configPtr;
             if (nodeSetting->log == true)
-            { 
+            {
               if (nodeSetting->logCurrent)
               {
                 olaftoa(nodeDevice->getCurrentCompensated(INA3221_CH1), tempData1, 2, sizeof(tempData1) / sizeof(char));
@@ -1316,7 +1316,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
             MCP23017 *nodeDevice = (MCP23017 *)temp->classPtr;
             struct_MCP23017 *nodeSetting = (struct_MCP23017 *)temp->configPtr;
             if (nodeSetting->log == true)
-            { 
+            {
               uint8_t currentA;
               currentA = nodeDevice->readPort(MCP23017Port::A);
 
@@ -1341,7 +1341,7 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
             MAX11615 *nodeDevice = (MAX11615 *)temp->classPtr;
             struct_MAX11615 *nodeSetting = (struct_MAX11615 *)temp->configPtr;
             if (nodeSetting->log == true)
-            { 
+            {
               uint16_t value[7];
               nodeDevice->scan(value);
               if (nodeSetting->logAllCH)
@@ -1349,6 +1349,19 @@ void gatherDeviceValues(char * sdOutputData, size_t lenData)
                 sprintf(tempData, "%d/%d/%d/%d/%d/%d,", value[0], value[1], value[2], value[3], value[4], value[5]);
                 strlcat(sdOutputData, tempData, lenData);
               }
+            }
+          }
+          break;
+        case DEVICE_PTE7300:
+          {
+            PTE7300_I2C *nodeDevice = (PTE7300_I2C *)temp->classPtr;
+            struct_PTE7300 *nodeSetting = (struct_PTE7300 *)temp->configPtr;
+            if (nodeSetting->log == true)
+            {
+              int32_t dev_read = (int32_t)(int16_t)nodeDevice->readDSP_S();
+              uint32_t  pressure_kPa = ((dev_read+16000)*nodeSetting->range*100)/32000;
+              sprintf(tempData, "%d,", pressure_kPa);
+              strlcat(sdOutputData, tempData, lenData);
             }
           }
           break;
@@ -1901,6 +1914,15 @@ static void getHelperText(char* helperText, size_t lenText)
             {
               if (nodeSetting->logAllCH)
                 strlcat(helperText, "DigitalValue(A0-A7),", lenText);
+            }
+          }
+          break;
+        case DEVICE_PTE7300:
+          {
+            struct_PTE7300 *nodeSetting = (struct_PTE7300 *)temp->configPtr;
+            if (nodeSetting->log)
+            {
+              strlcat(helperText, "p_kPa,", lenText);
             }
           }
           break;

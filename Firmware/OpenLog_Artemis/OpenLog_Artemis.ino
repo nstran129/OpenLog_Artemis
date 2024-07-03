@@ -1,4 +1,4 @@
-/* 
+/*
   OpenLog Artemis
   By: Nathan Seidle and Paul Clark
   SparkFun Electronics
@@ -123,7 +123,7 @@
                 delete dev;
                 dev = NULL;
             }
-        }      
+        }
     Use SdFat v2.1.2
     Compensate for missing / not-populated IMU
     Add support for yyyy/mm/dd and ISO 8601 date style (Issue 118)
@@ -135,7 +135,7 @@
       https://forum.sparkfun.com/viewtopic.php?f=172&t=57512
     Decided not to include this in the next full release.
     I suspect it will cause major badness on (e.g.) M8 modules that cannot support 25Hz.
-    
+
   v2.3:
     Resolve https://forum.sparkfun.com/viewtopic.php?f=171&t=58109
 
@@ -324,6 +324,8 @@ icm_20948_DMP_data_t dmpData; // Global storage for the DMP data - extracted fro
 #include <Beastdevices_INA3221.h> // https://github.com/nstran129/INA3221
 #include <MCP23017.h> //Click here to get the library: https://github.com/nstran129/arduino-mcp23017/tree/OLA_support
 #include <MAX11615.h> //Click here to get the library: https://github.com/nstran129/MAX11615/tree/OLA_support
+#include <PTE7300_I2C.h> //Click here to get the library: https://github.com/tfosdike/PTE7300
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Global variables
@@ -563,8 +565,8 @@ void setup() {
   // If we are streaming to Serial, start the stream with a Mime Type marker, followed by CR
   SerialPrintln(F("Content-Type: text/csv"));
   SerialPrintln("");
-  
-  if (settings.showHelperText == true) 
+
+  if (settings.showHelperText == true)
     printHelperText(OL_OUTPUT_SERIAL | OL_OUTPUT_SDCARD); //printHelperText to terminal and sensor file
 
   //If we are sleeping between readings then we cannot rely on millis() as it is powered down
@@ -770,7 +772,7 @@ void loop() {
           sensorDataFile.close();
           strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
           beginDataLogging(); //180ms
-          if (settings.showHelperText == true) 
+          if (settings.showHelperText == true)
             printHelperText(OL_OUTPUT_SDCARD); //printHelperText to the sensor file
         }
         if (online.serialLogging == true)

@@ -103,7 +103,7 @@ void recordSystemSettingsToFile()
         tempTime[j] = 0; // mark the end with a NULL
       }
     }
-    
+
     settingsFile.println("usBetweenReadings=" + (String)tempTime);
 
     //printDebug(F("Saving usBetweenReadings to SD card: "));
@@ -845,26 +845,33 @@ void recordDeviceSettingsToFile()
         case DEVICE_SBV_MONITOR_INA3221:
           {
             struct_INA3221 *nodeSetting = (struct_INA3221 *)temp->configPtr;
-            settingsFile.println((String)base + "log=" + nodeSetting->log); 
-            settingsFile.println((String)base + "logCurrent=" + nodeSetting->logCurrent); 
-            settingsFile.println((String)base + "logVoltage=" + nodeSetting->logVoltage);       
+            settingsFile.println((String)base + "log=" + nodeSetting->log);
+            settingsFile.println((String)base + "logCurrent=" + nodeSetting->logCurrent);
+            settingsFile.println((String)base + "logVoltage=" + nodeSetting->logVoltage);
           }
           break;
         case DEVICE_IO_MCP23017:
           {
             struct_MCP23017 *nodeSetting = (struct_MCP23017 *)temp->configPtr;
-            settingsFile.println((String)base + "log=" + nodeSetting->log); 
-            settingsFile.println((String)base + "logPortA=" + nodeSetting->logPortA); 
-            settingsFile.println((String)base + "logPortB=" + nodeSetting->logPortB);       
+            settingsFile.println((String)base + "log=" + nodeSetting->log);
+            settingsFile.println((String)base + "logPortA=" + nodeSetting->logPortA);
+            settingsFile.println((String)base + "logPortB=" + nodeSetting->logPortB);
           }
           break;
         case DEVICE_ADC_MAX11615:
           {
             struct_MAX11615 *nodeSetting = (struct_MAX11615 *)temp->configPtr;
-            settingsFile.println((String)base + "log=" + nodeSetting->log); 
-            settingsFile.println((String)base + "logAllCH=" + nodeSetting->logAllCH);        
+            settingsFile.println((String)base + "log=" + nodeSetting->log);
+            settingsFile.println((String)base + "logAllCH=" + nodeSetting->logAllCH);
           }
-          break;       
+          break;
+        case DEVICE_PTE7300:
+          {
+            struct_PTE7300 *nodeSetting = (struct_PTE7300 *)temp->configPtr;
+            settingsFile.println((String)base + "log=" + nodeSetting->log);
+            settingsFile.println((String)base + "range=" + nodeSetting->range);
+          }
+          break;
         default:
           SerialPrintf2("recordSettingsToFile Unknown device: %s\r\n", base);
           //settingsFile.println((String)base + "=UnknownDeviceSettings");
@@ -1604,7 +1611,7 @@ bool parseDeviceLine(char* str) {
           else if (strcmp(deviceSettingName, "logVoltage") == 0)
             nodeSetting->logVoltage = d;
           else
-            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);  
+            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);
         }
         break;
       case DEVICE_IO_MCP23017:
@@ -1617,7 +1624,7 @@ bool parseDeviceLine(char* str) {
           else if (strcmp(deviceSettingName, "logPortB") == 0)
             nodeSetting->logPortB = d;
           else
-            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);  
+            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);
         }
         break;
       case DEVICE_ADC_MAX11615:
@@ -1628,9 +1635,20 @@ bool parseDeviceLine(char* str) {
           else if (strcmp(deviceSettingName, "logAllCH") == 0)
             nodeSetting->logAllCH = d;
           else
-            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);  
+            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);
         }
-        break; 
+        break;
+      case DEVICE_PTE7300:
+        {
+          struct_PTE7300 *nodeSetting = (struct_PTE7300 *)deviceConfigPtr; //Create a local pointer that points to same spot as node does
+          if (strcmp(deviceSettingName, "log") == 0)
+            nodeSetting->log = d;
+          else if (strcmp(deviceSettingName, "range") == 0)
+            nodeSetting->range = d;
+          else
+            SerialPrintf2("Unknown device setting: %s\r\n", deviceSettingName);
+        }
+        break;
       default:
         SerialPrintf2("Unknown device type: %d\r\n", deviceType);
         SerialFlush();

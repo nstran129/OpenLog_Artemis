@@ -40,4 +40,5 @@ arduino-cli lib install --git-url https://github.com/sparkfunX/BlueRobotics_MS58
 arduino-cli lib install --git-url https://github.com/nstran129/INA3221
 arduino-cli lib install --git-url https://github.com/nstran129/arduino-mcp23017#87300b56596ca7c8765c3c2af90a10251eac5b15
 arduino-cli lib install --git-url https://github.com/nstran129/MAX11615#c327dd457e190bf494dcad0475ac12d5ee4366e9
+arduino-cli lib install --git-url https://github.com/tfosdike/PTE7300#bc99172fe8d9da3f008313323b2a2a3d9a37583a
 arduino-cli config set library.enable_unsafe_install false

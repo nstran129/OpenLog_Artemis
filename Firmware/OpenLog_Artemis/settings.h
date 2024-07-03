@@ -35,6 +35,7 @@ typedef enum
   DEVICE_SBV_MONITOR_INA3221, // 0-26 V, I2C Address can be 0x40 to 0x43
   DEVICE_IO_MCP23017, // I2C Address can be 0x20 to 0x27
   DEVICE_ADC_MAX11615, // I2C Address 0x33
+  DEVICE_PTE7300, // I2C Addresses 0x6C (no CRC) and 0xDA (CRC check)
 
   DEVICE_TOTAL_DEVICES, //Marks the end, used to iterate loops
   DEVICE_UNKNOWN_DEVICE,
@@ -470,23 +471,27 @@ struct struct_ADS1015 {
 struct struct_INA3221 {
   bool log = true;
   bool logCurrent = true;
-  bool logVoltage = true; 
+  bool logVoltage = true;
   unsigned long powerOnDelayMillis = minimumQwiicPowerOnDelay; // Wati for at least this many millis before communicating with this device. Increase if required!
 };
 
 struct struct_MCP23017 {
   bool log = true;
   bool logPortA = true;
-  bool logPortB = true; 
+  bool logPortB = true;
   unsigned long powerOnDelayMillis = minimumQwiicPowerOnDelay; // Wati for at least this many millis before communicating with this device. Increase if required!
 };
 
 struct struct_MAX11615 {
   bool log = true;
-  bool logAllCH = true; 
+  bool logAllCH = true;
   unsigned long powerOnDelayMillis = minimumQwiicPowerOnDelay; // Wati for at least this many millis before communicating with this device. Increase if required!
 };
-
+struct struct_PTE7300 {
+  bool log = true;
+  uint16_t range;
+  unsigned long powerOnDelayMillis = minimumQwiicPowerOnDelay; // Wait for at least this many millis before communicating with this device. Increase if required!
+};
 
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
 struct struct_settings {

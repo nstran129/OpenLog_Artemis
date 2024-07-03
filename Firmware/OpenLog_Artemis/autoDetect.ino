@@ -233,7 +233,7 @@ bool addDevice(deviceType_e deviceType, uint8_t address, uint8_t muxAddress, uin
       }
       break;
     case DEVICE_PARTICLE_SNGCJA5:
-      { 
+      {
 	      temp->classPtr = new SFE_PARTICLE_SENSOR;
 	      temp->configPtr = new struct_SNGCJA5;
       }
@@ -309,7 +309,12 @@ bool addDevice(deviceType_e deviceType, uint8_t address, uint8_t muxAddress, uin
         temp->classPtr = new MAX11615;
         temp->configPtr = new struct_MAX11615;
       }
-      break;  
+      break;
+    case DEVICE_PTE7300:
+      {
+        temp->classPtr = new PTE7300_I2C(qwiic);
+        temp->configPtr = new struct_PTE7300;
+      }
     default:
       SerialPrintf2("addDevice Device type not found: %d\r\n", deviceType);
       break;
@@ -650,7 +655,17 @@ bool beginQwiicDevices()
           if (tempDevice->begin(temp->address, qwiic) == true) //Wire port. Returns true on success.
             temp->online = true;
         }
-        break; 
+        break;
+      case DEVICE_PTE7300:
+        {
+          PTE7300_I2C *tempDevice = (PTE7300_I2C *)temp->classPtr;
+          struct_PTE7300 *nodeSetting = (struct_PTE7300 *)temp->configPtr; //Create a local pointer that points to same spot as node does
+          if (nodeSetting->powerOnDelayMillis > qwiicPowerOnDelayMillis) qwiicPowerOnDelayMillis = nodeSetting->powerOnDelayMillis; // Increase qwiicPowerOnDelayMillis if required
+          tempDevice->start();
+          if(tempDevice->readSERIAL() != 0)
+            temp->online = true;
+        }
+        break;
       default:
         SerialPrintf2("beginQwiicDevices: device type not found: %d\r\n", temp->deviceType);
         break;
@@ -948,28 +963,28 @@ void configureDevice(node * temp)
         struct_ISM330DHCX *sensorSetting = (struct_ISM330DHCX *)temp->configPtr;
 
         sensor->deviceReset();
-        
+
         // Wait for it to finish reseting
-        while( !sensor->getDeviceReset() ){ 
+        while( !sensor->getDeviceReset() ){
           delay(1);
-        } 
+        }
 
         sensor->setDeviceConfig();
         sensor->setBlockDataUpdate();
-        
+
         // Set the output data rate and precision of the accelerometer
         sensor->setAccelDataRate(sensorSetting->accelRate);
-        sensor->setAccelFullScale(sensorSetting->accelScale); 
-      
-        // Turn on the accelerometer's filter and apply settings. 
+        sensor->setAccelFullScale(sensorSetting->accelScale);
+
+        // Turn on the accelerometer's filter and apply settings.
         sensor->setAccelFilterLP2(sensorSetting->accelFilterLP2);
         sensor->setAccelSlopeFilter(sensorSetting->accelSlopeFilter);
-      
+
         // Set the output data rate and precision of the gyroscope
         sensor->setGyroDataRate(sensorSetting->gyroRate);
-        sensor->setGyroFullScale(sensorSetting->gyroScale); 
-      
-        // Turn on the gyroscope's filter and apply settings. 
+        sensor->setGyroFullScale(sensorSetting->gyroScale);
+
+        // Turn on the gyroscope's filter and apply settings.
         sensor->setGyroFilterLP1(sensorSetting->gyroFilterLP1);
         sensor->setGyroLP1Bandwidth(sensorSetting->gyroLP1BW);
       }
@@ -991,20 +1006,20 @@ void configureDevice(node * temp)
 
         sensor->softwareReset();
         delay(5);
-        
-        sensor->enableAccel(false); 
-      
+
+        sensor->enableAccel(false);
+
         if (sensorSetting->range8G) sensor->setRange(SFE_KX134_RANGE8G);
         else if (sensorSetting->range16G) sensor->setRange(SFE_KX134_RANGE16G);
         else if (sensorSetting->range32G) sensor->setRange(SFE_KX134_RANGE32G);
         else sensor->setRange(SFE_KX134_RANGE64G);
-      
+
         sensor->enableDataEngine();     // Enables the bit that indicates data is ready.
-        
+
         if (sensorSetting->highSpeed) sensor->setOutputDataRate(9); // 400Hz
         else sensor->setOutputDataRate(6); // Default is 50Hz
-        
-        sensor->enableAccel();          
+
+        sensor->enableAccel();
       }
       break;
     case DEVICE_ADS1015:
@@ -1038,13 +1053,13 @@ void configureDevice(node * temp)
       {
         MCP23017 *sensor = (MCP23017 *)temp->classPtr;
         struct_MCP23017 *sensorSetting = (struct_MCP23017 *)temp->configPtr;
-        
+
         //Set shunt resistors to 10 mOhm for all channels
         sensor->portMode(MCP23017Port::A, 0b11111111); //Port A as input
-        sensor->portMode(MCP23017Port::B, 0b11111111); //Port B as input 
+        sensor->portMode(MCP23017Port::B, 0b11111111); //Port B as input
         sensor->writeRegister(MCP23017Register::GPIO_A, 0x00);  //Reset port A
-        sensor->writeRegister(MCP23017Register::GPIO_B, 0x00);  //Reset port B 
-        sensor->writeRegister(MCP23017Register::IPOL_A, 0x00);      
+        sensor->writeRegister(MCP23017Register::GPIO_B, 0x00);  //Reset port B
+        sensor->writeRegister(MCP23017Register::IPOL_A, 0x00);
         sensor->writeRegister(MCP23017Register::IPOL_B, 0x00);
       }
       break;
@@ -1054,6 +1069,13 @@ void configureDevice(node * temp)
     	  struct_MAX11615 *sensorSetting = (struct_MAX11615 *)temp->configPtr;
 
     	  sensor->init(4+2+1);
+      }
+      break;
+    case DEVICE_PTE7300:
+      {
+    	  PTE7300_I2C *sensor = (PTE7300_I2C *)temp->classPtr;
+        sensor->start();
+        SerialPrintf2("PTE7300 serial %d\r\n",sensor->readSERIAL());
       }
       break;
     default:
@@ -1185,6 +1207,9 @@ FunctionPointer getConfigFunctionPtr(uint8_t nodeNumber)
       break;
     case DEVICE_ADC_MAX11615:
       ptr = (FunctionPointer)menuConfigure_MAX11615;
+      break;
+    case DEVICE_PTE7300:
+      ptr = (FunctionPointer)menuConfigure_PTE7300;
       break;
     default:
       SerialPrintln(F("getConfigFunctionPtr: Unknown device type"));
@@ -1388,12 +1413,12 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
       }
       break;
     case 0x21:
-      { 
+      {
         //Confidence: medium - using IOCON bank bit to check register address
         MCP23017 sensor;
         if (sensor.begin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_IO_MCP23017);
-          
+
         //Confidence: High - .begin reads the product ID
         SDP3X sensor1;
         sensor1.stopContinuousMeasurement(i2cAddress, qwiic); //Make sure continuous measurements are stopped or .begin will fail
@@ -1437,7 +1462,7 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
       }
       break;
     case 0x33:
-      { 
+      {
         //Confidence: medium - perform init() after connection
         MAX11615 sensor;
         if (sensor.begin(i2cAddress, qwiic) == true)  //Address, Wire port
@@ -1458,12 +1483,12 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
       }
       break;
     case 0x40:
-      { 
+      {
         //Confidence: High - .begin read the Product ID
         INA3221 sensor;
         if (sensor.begin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_SBV_MONITOR_INA3221);
-        
+
         //Humidity portion of the MS8607 sensor
         //Confidence: High - does CRC on internal EEPROM read
         MS8607 sensor1;
@@ -1482,7 +1507,7 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
         INA3221 sensor;
         if (sensor.begin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_SBV_MONITOR_INA3221);
-         
+
         //Confidence: High - Configures ADC mode
         SFE_ADS122C04 sensor1;
         if (sensor1.begin(i2cAddress, qwiic) == true) //Address, Wire port
@@ -1495,7 +1520,7 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
         INA3221 sensor;
         if (sensor.begin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_SBV_MONITOR_INA3221);
-        
+
         //Confidence: High - Sends/receives CRC checked data response
         setQwiicPullups(0); //Disable pullups to minimize CRC issues
         SFE_UBLOX_GNSS sensor1;
@@ -1639,13 +1664,18 @@ deviceType_e testDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portNumb
         SparkFun_ISM330DHCX sensor;
         if (sensor.begin(qwiic, i2cAddress))
           return(DEVICE_ISM330DHCX);
-          
+
         QwiicButton sensor1;
         if (sensor1.begin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_QWIIC_BUTTON);
       }
       break;
     case 0x6C:
+      {
+        PTE7300_I2C sensor(qwiic);
+        if (sensor.isConnected())
+          return (DEVICE_PTE7300);
+      }
     case 0x6D:
     case 0x6E:
     case 0x6F:
@@ -1758,7 +1788,7 @@ deviceType_e testMuxDevice(uint8_t i2cAddress, uint8_t muxAddress, uint8_t portN
         if (multiplexerBegin(i2cAddress, qwiic) == true) //Address, Wire port
           return (DEVICE_MULTIPLEXER);
       }
-      break;    
+      break;
     case 0x71:
     case 0x72:
     case 0x73:
@@ -2010,7 +2040,10 @@ const char* getDeviceName(deviceType_e deviceNumber)
       break;
     case DEVICE_ADC_MAX11615:
       return "ADC-MAX11615";
-      break;  
+      break;
+    case DEVICE_PTE7300:
+      return "Pressure-PTE7300";
+      break;
     case DEVICE_UNKNOWN_DEVICE:
       return "Unknown device";
       break;
